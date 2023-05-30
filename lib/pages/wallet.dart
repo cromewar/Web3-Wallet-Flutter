@@ -13,16 +13,35 @@ class WalletPage extends StatelessWidget {
         title: const Text('Wallet'),
         actions: [
           IconButton(
-            onPressed: () async {
-              SharedPreferences prefs = await SharedPreferences.getInstance();
-              await prefs.remove('privateKey');
-
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const CreateOrImportPage()),
-                (route) => false,
-              );
+            onPressed: () {
+              showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text('Menu'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            leading: Icon(Icons.logout),
+                            title: Text('Logout'),
+                            onTap: () async {
+                              SharedPreferences prefs =
+                                  await SharedPreferences.getInstance();
+                              await prefs.remove('privateKey');
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const CreateOrImportPage()),
+                                (route) => false,
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  });
             },
             icon: const Icon(Icons.menu),
           ),
