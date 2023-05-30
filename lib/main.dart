@@ -1,49 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'wallet_provider.dart';
+import 'providers/wallet_provider.dart';
+import 'package:web3_wallet/utils/routes.dart';
+import 'package:web3_wallet/pages/login_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Load the private key
+  WalletProvider walletProvider = WalletProvider();
+  await walletProvider.loadPrivateKey();
+
   runApp(
-    ChangeNotifierProvider<WalletProvider>(
-      create: (context) => WalletProvider(),
-      child: MyApp(),
+    ChangeNotifierProvider<WalletProvider>.value(
+      value: walletProvider,
+      child: const MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    final walletProvider = Provider.of<WalletProvider>(context);
-
     return MaterialApp(
-      title: 'Crypto Wallet',
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('Crypto Wallet'),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: () async {
-                  final mnemonic = walletProvider.generateMnemonic();
-                  final privateKey =
-                      await walletProvider.getPrivateKey(mnemonic);
-                  final publicKey =
-                      await walletProvider.getPublicKey(privateKey);
-
-                  print('Mnemonic: $mnemonic');
-                  print('Private Key: $privateKey');
-                  print('Public Key: $publicKey');
-                },
-                child: Text('Generate Wallet'),
-              ),
-            ],
-          ),
-        ),
-      ),
+      initialRoute: MyRoutes.loginRoute,
+      routes: {
+        MyRoutes.loginRoute: (context) => const LoginPage(),
+      },
     );
   }
 }
