@@ -2,9 +2,54 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web3_wallet/providers/wallet_provider.dart';
 import 'package:web3_wallet/pages/create_or_import.dart';
+import 'package:web3dart/web3dart.dart';
+import 'package:web3_wallet/utils/get_balances.dart';
+import 'dart:convert';
 
-class WalletPage extends StatelessWidget {
+class WalletPage extends StatefulWidget {
   const WalletPage({Key? key}) : super(key: key);
+
+  @override
+  _WalletPageState createState() => _WalletPageState();
+}
+
+class _WalletPageState extends State<WalletPage> {
+  String walletAddress = '';
+  String balance = '';
+
+  @override
+  void initState() {
+    super.initState();
+    loadWalletData();
+  }
+
+  Future<void> loadWalletData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? privateKey = prefs.getString('privateKey');
+    if (privateKey != null) {
+      final walletProvider = WalletProvider();
+      await walletProvider.loadPrivateKey();
+      EthereumAddress address = await walletProvider.getPublicKey(privateKey);
+
+      setState(() {
+        walletAddress = address.hex;
+      });
+      String response = await getBalances(address.hex, 'sepolia');
+      dynamic data = json.decode(response);
+      String newBalance = data['balance'] ?? '0';
+
+      // Transform balance from wei to ether
+      EtherAmount latest_balance =
+          EtherAmount.fromBigInt(EtherUnit.wei, BigInt.parse(newBalance));
+      String latest_balance_in_ether =
+          latest_balance.getValueInUnit(EtherUnit.ether).toString();
+
+      setState(() {
+        balance = latest_balance_in_ether;
+      });
+      print(balance);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,33 +60,35 @@ class WalletPage extends StatelessWidget {
           IconButton(
             onPressed: () {
               showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: const Text('Menu'),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ListTile(
-                            leading: Icon(Icons.logout),
-                            title: Text('Logout'),
-                            onTap: () async {
-                              SharedPreferences prefs =
-                                  await SharedPreferences.getInstance();
-                              await prefs.remove('privateKey');
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const CreateOrImportPage()),
-                                (route) => false,
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    );
-                  });
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text('Menu'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.logout),
+                          title: const Text('Logout'),
+                          onTap: () async {
+                            SharedPreferences prefs =
+                                await SharedPreferences.getInstance();
+                            await prefs.remove('privateKey');
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const CreateOrImportPage(),
+                              ),
+                              (route) => false,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
             },
             icon: const Icon(Icons.menu),
           ),
@@ -53,10 +100,10 @@ class WalletPage extends StatelessWidget {
           Container(
             height: MediaQuery.of(context).size.height * 0.4,
             padding: const EdgeInsets.all(16.0),
-            child: const Column(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
+                const Text(
                   'Wallet Address',
                   style: TextStyle(
                     fontSize: 24.0,
@@ -64,16 +111,16 @@ class WalletPage extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 16.0),
+                const SizedBox(height: 16.0),
                 Text(
-                  '0x1234567890abcdef',
-                  style: TextStyle(
+                  walletAddress,
+                  style: const TextStyle(
                     fontSize: 20.0,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 32.0),
-                Text(
+                const SizedBox(height: 32.0),
+                const Text(
                   'Balance',
                   style: TextStyle(
                     fontSize: 24.0,
@@ -81,9 +128,9 @@ class WalletPage extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 16.0),
+                const SizedBox(height: 16.0),
                 Text(
-                  '2.5 ETH',
+                  balance ?? '0',
                   style: TextStyle(
                     fontSize: 20.0,
                   ),
