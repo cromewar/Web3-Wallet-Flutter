@@ -4,6 +4,7 @@ import 'package:web3_wallet/providers/wallet_provider.dart';
 import 'package:web3_wallet/pages/create_or_import.dart';
 import 'package:web3dart/web3dart.dart';
 import 'package:web3_wallet/utils/get_balances.dart';
+import 'package:web3_wallet/components/nft_balances.dart';
 import 'dart:convert';
 
 class WalletPage extends StatefulWidget {
@@ -30,7 +31,7 @@ class _WalletPageState extends State<WalletPage> {
       final walletProvider = WalletProvider();
       await walletProvider.loadPrivateKey();
       EthereumAddress address = await walletProvider.getPublicKey(privateKey);
-
+      print(address.hex);
       setState(() {
         walletAddress = address.hex;
       });
@@ -39,15 +40,14 @@ class _WalletPageState extends State<WalletPage> {
       String newBalance = data['balance'] ?? '0';
 
       // Transform balance from wei to ether
-      EtherAmount latest_balance =
+      EtherAmount latestBalance =
           EtherAmount.fromBigInt(EtherUnit.wei, BigInt.parse(newBalance));
-      String latest_balance_in_ether =
-          latest_balance.getValueInUnit(EtherUnit.ether).toString();
+      String latestBalanceInEther =
+          latestBalance.getValueInUnit(EtherUnit.ether).toString();
 
       setState(() {
-        balance = latest_balance_in_ether;
+        balance = latestBalanceInEther;
       });
-      print(balance);
     }
   }
 
@@ -56,43 +56,6 @@ class _WalletPageState extends State<WalletPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Wallet'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: const Text('Menu'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.logout),
-                          title: const Text('Logout'),
-                          onTap: () async {
-                            SharedPreferences prefs =
-                                await SharedPreferences.getInstance();
-                            await prefs.remove('privateKey');
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const CreateOrImportPage(),
-                              ),
-                              (route) => false,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-            icon: const Icon(Icons.menu),
-          ),
-        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -130,8 +93,8 @@ class _WalletPageState extends State<WalletPage> {
                 ),
                 const SizedBox(height: 16.0),
                 Text(
-                  balance ?? '0',
-                  style: TextStyle(
+                  balance,
+                  style: const TextStyle(
                     fontSize: 20.0,
                   ),
                   textAlign: TextAlign.center,
@@ -149,7 +112,7 @@ class _WalletPageState extends State<WalletPage> {
                     onPressed: () {
                       // Handle send button press
                     },
-                    child: Icon(Icons.send),
+                    child: const Icon(Icons.send),
                   ),
                   const SizedBox(height: 8.0),
                   const Text('Send'),
@@ -158,41 +121,91 @@ class _WalletPageState extends State<WalletPage> {
               Column(
                 children: [
                   FloatingActionButton(
-                    heroTag: 'receiveButton', // Unique tag for receive button
+                    heroTag: 'refreshButton', // Unique tag for send button
                     onPressed: () {
-                      // Handle receive button press
+                      // Handle send button press
                     },
-                    child: const Icon(Icons.qr_code),
+                    child: const Icon(Icons.replay_outlined),
                   ),
                   const SizedBox(height: 8.0),
-                  const Text('Receive'),
+                  const Text('Refresh'),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 30.0),
-          const Expanded(
+          Expanded(
             child: DefaultTabController(
               length: 3,
               child: Column(
                 children: [
-                  TabBar(
+                  const TabBar(
                     labelColor: Colors.blue,
                     tabs: [
                       Tab(text: 'Assets'),
                       Tab(text: 'NFTs'),
-                      Tab(text: 'Activities'),
+                      Tab(text: 'Options'),
                     ],
                   ),
                   Expanded(
                     child: TabBarView(
                       children: [
                         // Assets Tab
-                        Center(child: Text('Assets Tab')),
+                        Column(
+                          children: [
+                            Card(
+                              margin: const EdgeInsets.all(16.0),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Sepolia ETH',
+                                      style: TextStyle(
+                                        fontSize: 24.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      balance,
+                                      style: const TextStyle(
+                                        fontSize: 24.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
                         // NFTs Tab
-                        Center(child: Text('NFTs Tab')),
+                        SingleChildScrollView(
+                            child: NFTListPage(
+                                address: walletAddress, chain: 'sepolia')),
                         // Activities Tab
-                        Center(child: Text('Activities Tab')),
+                        Center(
+                          child: ListTile(
+                            leading: const Icon(Icons.logout),
+                            title: const Text('Logout'),
+                            onTap: () async {
+                              SharedPreferences prefs =
+                                  await SharedPreferences.getInstance();
+                              await prefs.remove('privateKey');
+                              // ignore: use_build_context_synchronously
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const CreateOrImportPage(),
+                                ),
+                                (route) => false,
+                              );
+                            },
+                          ),
+                        ),
                       ],
                     ),
                   ),
