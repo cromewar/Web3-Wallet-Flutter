@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:web3_wallet/pages/generate_mnemonic_page.dart';
+import 'package:web3_wallet/pages/import_wallet.dart';
 
 class CreateOrImportPage extends StatelessWidget {
   const CreateOrImportPage({super.key});
@@ -71,6 +72,12 @@ class CreateOrImportPage extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // Add your register logic here
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ImportWallet(),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor:
