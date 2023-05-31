@@ -5,6 +5,7 @@ import 'package:web3_wallet/pages/create_or_import.dart';
 import 'package:web3dart/web3dart.dart';
 import 'package:web3_wallet/utils/get_balances.dart';
 import 'package:web3_wallet/components/nft_balances.dart';
+import 'package:web3_wallet/components/send_tokens.dart';
 import 'dart:convert';
 
 class WalletPage extends StatefulWidget {
@@ -17,6 +18,7 @@ class WalletPage extends StatefulWidget {
 class _WalletPageState extends State<WalletPage> {
   String walletAddress = '';
   String balance = '';
+  String pvKey = '';
 
   @override
   void initState() {
@@ -34,7 +36,9 @@ class _WalletPageState extends State<WalletPage> {
       print(address.hex);
       setState(() {
         walletAddress = address.hex;
+        pvKey = privateKey;
       });
+      print(pvKey);
       String response = await getBalances(address.hex, 'sepolia');
       dynamic data = json.decode(response);
       String newBalance = data['balance'] ?? '0';
@@ -110,7 +114,12 @@ class _WalletPageState extends State<WalletPage> {
                   FloatingActionButton(
                     heroTag: 'sendButton', // Unique tag for send button
                     onPressed: () {
-                      // Handle send button press
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                SendTokensPage(privateKey: pvKey)),
+                      );
                     },
                     child: const Icon(Icons.send),
                   ),
@@ -123,7 +132,9 @@ class _WalletPageState extends State<WalletPage> {
                   FloatingActionButton(
                     heroTag: 'refreshButton', // Unique tag for send button
                     onPressed: () {
-                      // Handle send button press
+                      setState(() {
+                        // Update any necessary state variables or perform any actions to refresh the widget
+                      });
                     },
                     child: const Icon(Icons.replay_outlined),
                   ),
